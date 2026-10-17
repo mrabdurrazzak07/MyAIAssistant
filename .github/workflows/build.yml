@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repository
+    - name: Checkout
       uses: actions/checkout@v4
 
     - name: Set up JDK 17
@@ -19,7 +19,7 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Setup Android Project
+    - name: Setup Android Project Files
       run: |
         mkdir -p app/src/main/java/com/mycompany/myapp
         mkdir -p app/src/main/res/xml
@@ -45,14 +45,14 @@ jobs:
         include ':app'
         EOF
 
-        # build.gradle
+        # root build.gradle
         cat << 'EOF' > build.gradle
         plugins {
-            id 'com.android.application' version '8.2.2' apply false
+            id 'com.android.application' version '8.1.4' apply false
         }
         EOF
 
-        # app build.gradle
+        # app/build.gradle
         cat << 'EOF' > app/build.gradle
         plugins {
             id 'com.android.application'
@@ -74,10 +74,6 @@ jobs:
                 sourceCompatibility JavaVersion.VERSION_17
                 targetCompatibility JavaVersion.VERSION_17
             }
-        }
-
-        dependencies {
-            implementation 'androidx.appcompat:appcompat:1.6.1'
         }
         EOF
 
@@ -109,6 +105,16 @@ jobs:
                 android:allowBackup="true"
                 android:label="@string/app_name"
                 android:supportsRtl="true">
+                
+                <activity
+                    android:name=".MainActivity"
+                    android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN" />
+                        <category android:name="android.intent.category.LAUNCHER" />
+                    </intent-filter>
+                </activity>
+
                 <service
                     android:name=".MyAIAgentService"
                     android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
@@ -124,47 +130,25 @@ jobs:
         </manifest>
         EOF
 
-        # MyAIAgentService.java
-        cat << 'EOF' > app/src/main/java/com/mycompany/myapp/MyAIAgentService.java
+        # MainActivity.java
+        cat << 'EOF' > app/src/main/java/com/mycompany/myapp/MainActivity.java
         package com.mycompany.myapp;
 
-        import android.accessibilityservice.AccessibilityService;
-        import android.view.accessibility.AccessibilityEvent;
-        import android.view.accessibility.AccessibilityNodeInfo;
-        import java.util.List;
+        import android.app.Activity;
+        import android.os.Bundle;
+        import android.widget.TextView;
 
-        public class MyAIAgentService extends AccessibilityService {
+        public class MainActivity extends Activity {
             @Override
-            public void onAccessibilityEvent(AccessibilityEvent event) {
-                AccessibilityNodeInfo rootNode = getRootInActiveWindow();
-                if (rootNode == null) return;
-
-                List<AccessibilityNodeInfo> nodes = rootNode.findAccessibilityNodeInfosByText("Search");
-                if (nodes != null && !nodes.isEmpty()) {
-                    for (AccessibilityNodeInfo node : nodes) {
-                        if (node.isClickable()) {
-                            node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                            break;
-                        }
-                    }
-                }
+            protected void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+                TextView tv = new TextView(this);
+                tv.setText("AI Agent Service is Ready! Enable it from Settings > Accessibility.");
+                tv.setTextSize(18);
+                tv.setPadding(40, 40, 40, 40);
+                setContentView(tv);
             }
-
-            @Override
-            public void onInterrupt() {}
         }
         EOF
 
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v4
-      with:
-        gradle-version: "8.5"
-
-    - name: Build APK with Gradle
-      run: gradle assembleDebug
-
-    - name: Upload Pixel 8 Pro APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: MyAIAgent-Pixel8Pro-APK
-        path: app/build/outputs/apk/debug/app-debug.apk
+        # MyAIA
